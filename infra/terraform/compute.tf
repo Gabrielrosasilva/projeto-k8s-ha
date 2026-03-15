@@ -44,3 +44,31 @@ resource "oci_core_instance" "k8s_nodes" {
 data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
+
+resource "local_file" "ansible_inventory" {
+  content = <<-EOT
+    [master]
+    k8s-master ansible_host=${oci_core_instance.k8s_nodes[0].public_ip} ansible_user=opc ansible_ssh_private_key_file=ssh_private_key.pem
+
+    [workers]
+    k8s-worker-1 ansible_host=${oci_core_instance.k8s_nodes[1].public_ip} ansible_user=opc ansible_ssh_private_key_file=ssh_private_key.pem
+    k8s-worker-2 ansible_host=${oci_core_instance.k8s_nodes[2].public_ip} ansible_user=opc ansible_ssh_private_key_file=ssh_private_key.pem
+
+    [k8s_cluster:children]
+    master
+    workers
+  EOT
+  
+  # Como a pipeline roda na raiz, vamos salvar o inventário na raiz temporariamente
+  filename = "${path.module}/../../inventory.ini"
+}
+
+  resource "null_resource" "update_cloudns" {
+  # Isso garante que ele só vai rodar DEPOIS que a máquina Master for criada
+  depends_on = [oci_core_instance.k8s_nodes]
+
+  # Dispara a requisição para o CloudNS com o novo IP
+  provisioner "local-exec" {
+    command = "curl -s 'https://ipv4.cloudns.net/api/dynamicURL/?q=COLOQUE_SEU_CODIGO_AQUI&ip=${oci_core_instance.k8s_nodes[0].public_ip}'"
+  }
+}

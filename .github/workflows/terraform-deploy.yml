@@ -56,6 +56,29 @@ jobs:
         TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
         TF_VAR_region: ${{ secrets.TF_VAR_region }}
         TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
+    
+    # =========================================================
+    # NOVOS PASSOS PARA RODAR O ANSIBLE AUTOMATICAMENTE
+    # =========================================================
+    - name: Configurar Chave Privada para o Ansible
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+      run: |
+        # Volta para a raiz do projeto (onde o inventario foi gerado)
+        cd ../../
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_private_key.pem
+        chmod 600 ssh_private_key.pem
+
+    - name: Instalar Ansible no GitHub Runner
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+      run: sudo apt-get update && sudo apt-get install -y ansible
+
+    - name: Executar Playbook do Ansible (Instalando K3s)
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+      run: |
+        cd ../../
+        # Desabilita checagem de chave na primeira conexão para não travar a pipeline
+        export ANSIBLE_HOST_KEY_CHECKING=False
+        ansible-playbook -i inventory.ini config/ansible/k3s-install.yml
 
     - name: Terraform Destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'destroy'
