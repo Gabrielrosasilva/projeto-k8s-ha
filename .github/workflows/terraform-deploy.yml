@@ -1,0 +1,67 @@
+name: 'Terraform OCI - Apply/Destroy'
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      terraform_action:
+        description: 'O que voce quer fazer com a infraestrutura?'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply
+          - destroy
+
+jobs:
+  terraform:
+    name: 'Executar Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do Repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Chaves (SSH e OCI API)
+      run: |
+        echo "${{ secrets.OCI_CLI_KEY_CONTENT }}" > oci_api_key.pem
+        echo "${{ secrets.SSH_PUBLIC_KEY }}" > ssh_public_key.pub
+        chmod 600 oci_api_key.pem
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      run: terraform init
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    - name: Terraform Apply
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
+      run: terraform apply -auto-approve
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        TF_VAR_tenancy_ocid: ${{ secrets.TF_VAR_tenancy_ocid }}
+        TF_VAR_user_ocid: ${{ secrets.TF_VAR_user_ocid }}
+        TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
+        TF_VAR_region: ${{ secrets.TF_VAR_region }}
+        TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
+        TF_VAR_private_key_path: "oci_api_key.pem"
+        TF_VAR_ssh_public_key_path: "ssh_public_key.pub"
+
+    - name: Terraform Destroy
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'destroy'
+      run: terraform destroy -auto-approve
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        TF_VAR_tenancy_ocid: ${{ secrets.TF_VAR_tenancy_ocid }}
+        TF_VAR_user_ocid: ${{ secrets.TF_VAR_user_ocid }}
+        TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
+        TF_VAR_region: ${{ secrets.TF_VAR_region }}
+        TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
+        TF_VAR_private_key_path: "oci_api_key.pem"
+        TF_VAR_ssh_public_key_path: "ssh_public_key.pub"

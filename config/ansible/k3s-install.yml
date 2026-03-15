@@ -1,0 +1,36 @@
+---
+- name: Configurar o K3s Master Node
+  hosts: master
+  become: yes # Executa como root
+  tasks:
+    - name: Instalar K3s no Master
+      shell: curl -sfL https://get.k3s.io | sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Obter o token do cluster K3s
+      slurp:
+        src: /var/lib/rancher/k3s/server/node-token
+      register: node_token
+
+    - name: Guardar o token como variável
+      set_fact:
+        token: "{{ node_token['content'] | b64decode | trim }}"
+
+    - name: Obter o IP Privado do Master
+      shell: hostname -I | awk '{print $1}'
+      register: master_private_ip
+
+    - name: Guardar IP Privado
+      set_fact:
+        master_ip: "{{ master_private_ip.stdout }}"
+
+- name: Configurar os K3s Worker Nodes
+  hosts: workers
+  become: yes
+  tasks:
+    - name: Instalar K3s Agente nos Workers e juntar ao Master
+      shell: >
+        curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['master'][0]]['master_ip'] }}:6443 K3S_TOKEN={{ hostvars[groups['master'][0]]['token'] }} sh -
+      args:
+        creates: /usr/local/bin/k3s-agent
