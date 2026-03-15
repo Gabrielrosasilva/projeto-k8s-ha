@@ -25,7 +25,6 @@ jobs:
 
     - name: Configurar Chaves (SSH e OCI API)
       run: |
-        # Usando cat EOF para preservar as quebras de linha perfeitamente
         cat << 'EOF' > infra/terraform/oci_api_key.pem
         ${{ secrets.OCI_CLI_KEY_CONTENT }}
         EOF
@@ -37,6 +36,11 @@ jobs:
         cat << 'EOF' > ssh_private_key.pem
         ${{ secrets.SSH_PRIVATE_KEY }}
         EOF
+        
+        # O PULO DO GATO: Remove caracteres invisíveis do Windows (\r) que corrompem as chaves
+        sed -i 's/\r//g' infra/terraform/oci_api_key.pem
+        sed -i 's/\r//g' infra/terraform/ssh_public_key.pub
+        sed -i 's/\r//g' ssh_private_key.pem
         
         chmod 600 infra/terraform/oci_api_key.pem
         chmod 600 ssh_private_key.pem
@@ -77,7 +81,7 @@ jobs:
         sleep 30
         export ANSIBLE_HOST_KEY_CHECKING=False
         ansible-playbook -i inventory.ini config/ansible/k3s-install.yml
-        
+
     - name: Terraform Destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'destroy'
       run: terraform destroy -auto-approve -var="private_key_path=oci_api_key.pem" -var="ssh_public_key_path=ssh_public_key.pub"
