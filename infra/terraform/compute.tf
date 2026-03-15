@@ -59,7 +59,6 @@ resource "local_file" "ansible_inventory" {
     workers
   EOT
   
-  # Como a pipeline roda na raiz, vamos salvar o inventário na raiz temporariamente
   filename = "${path.module}/../../inventory.ini"
 }
 
