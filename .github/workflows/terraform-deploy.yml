@@ -26,7 +26,9 @@ jobs:
 
     steps:
     - name: Checkout do Repositorio
-      uses: actions/checkout@v4
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.7"
 
     - name: Configurar Chaves (SSH e OCI API)
       run: |
