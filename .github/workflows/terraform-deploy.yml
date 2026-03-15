@@ -16,23 +16,23 @@ on:
 
 jobs:
   terraform:
-    name: 'Executar Terraform'
+    name: 'Executar Terraform e Ansible'
     runs-on: ubuntu-latest
     
-    # ISSO AQUI RESOLVE O ERRO: Diz para rodar tudo dentro da pasta certa
-    defaults:
-      run:
-        working-directory: infra/terraform
-
     steps:
     - name: Checkout do Repositorio
       uses: actions/checkout@v4
 
     - name: Configurar Chaves (SSH e OCI API)
       run: |
-        echo "${{ secrets.OCI_CLI_KEY_CONTENT }}" > oci_api_key.pem
-        echo "${{ secrets.SSH_PUBLIC_KEY }}" > ssh_public_key.pub
-        chmod 600 oci_api_key.pem
+        # Chaves do Terraform vão para a pasta do Terraform
+        echo "${{ secrets.OCI_CLI_KEY_CONTENT }}" > infra/terraform/oci_api_key.pem
+        echo "${{ secrets.SSH_PUBLIC_KEY }}" > infra/terraform/ssh_public_key.pub
+        chmod 600 infra/terraform/oci_api_key.pem
+        
+        # Chave privada para o Ansible fica na raiz
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_private_key.pem
+        chmod 600 ssh_private_key.pem
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -41,6 +41,7 @@ jobs:
 
     - name: Terraform Init
       run: terraform init
+      working-directory: infra/terraform
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -48,6 +49,7 @@ jobs:
     - name: Terraform Apply
       if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
       run: terraform apply -auto-approve -var="private_key_path=oci_api_key.pem" -var="ssh_public_key_path=ssh_public_key.pub"
+      working-directory: infra/terraform
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -56,33 +58,22 @@ jobs:
         TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
         TF_VAR_region: ${{ secrets.TF_VAR_region }}
         TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
-    
-    # =========================================================
-    # NOVOS PASSOS PARA RODAR O ANSIBLE AUTOMATICAMENTE
-    # =========================================================
-    - name: Configurar Chave Privada para o Ansible
-      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
-      run: |
-        # Volta para a raiz do projeto (onde o inventario foi gerado)
-        cd ../../
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ssh_private_key.pem
-        chmod 600 ssh_private_key.pem
 
     - name: Instalar Ansible no GitHub Runner
       if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
       run: sudo apt-get update && sudo apt-get install -y ansible
 
-    - name: Executar Playbook do Ansible (Instalando K3s)
+    - name: Executar Ansible (Instalar K3s)
       if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
       run: |
-        cd ../../
-        # Desabilita checagem de chave na primeira conexão para não travar a pipeline
         export ANSIBLE_HOST_KEY_CHECKING=False
+        # Roda o playbook usando o inventario dinamico gerado pelo Terraform
         ansible-playbook -i inventory.ini config/ansible/k3s-install.yml
 
     - name: Terraform Destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'destroy'
       run: terraform destroy -auto-approve -var="private_key_path=oci_api_key.pem" -var="ssh_public_key_path=ssh_public_key.pub"
+      working-directory: infra/terraform
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
