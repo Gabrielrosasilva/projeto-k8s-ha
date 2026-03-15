@@ -18,6 +18,11 @@ jobs:
   terraform:
     name: 'Executar Terraform'
     runs-on: ubuntu-latest
+    
+    # ISSO AQUI RESOLVE O ERRO: Diz para rodar tudo dentro da pasta certa
+    defaults:
+      run:
+        working-directory: infra/terraform
 
     steps:
     - name: Checkout do Repositorio

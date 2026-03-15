@@ -7,16 +7,20 @@ terraform {
   }
 
   backend "s3" {
-    bucket   = "terraform-state-k8s"
-    key      = "projeto-k8s-ha/terraform.tfstate"
-    region   = "sa-saopaulo-1"
-    
-    endpoint = "https://grcz8lmkhuou.compat.objectstorage.sa-saopaulo-1.oraclecloud.com"
-    
+    bucket = "terraform-state-k8s"
+    key    = "projeto-k8s-ha/terraform.tfstate"
+    region = "sa-saopaulo-1"
+
     skip_region_validation      = true
     skip_credentials_validation = true
+    skip_requesting_account_id  = true
     skip_metadata_api_check     = true
-    force_path_style            = true
+    skip_s3_checksum            = true
+    use_path_style              = true
+
+    endpoints = {
+      s3 = "https://grcz8lmkhuou.compat.objectstorage.sa-saopaulo-1.oraclecloud.com"
+    }
   }
 }
 
