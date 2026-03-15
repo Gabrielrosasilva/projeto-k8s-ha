@@ -45,7 +45,8 @@ jobs:
 
     - name: Terraform Apply
       if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'apply')
-      run: terraform apply -auto-approve
+      # ADICIONAMOS OS -var AQUI EMBAIXO
+      run: terraform apply -auto-approve -var="private_key_path=oci_api_key.pem" -var="ssh_public_key_path=ssh_public_key.pub"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -54,12 +55,11 @@ jobs:
         TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
         TF_VAR_region: ${{ secrets.TF_VAR_region }}
         TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
-        TF_VAR_private_key_path: "oci_api_key.pem"
-        TF_VAR_ssh_public_key_path: "ssh_public_key.pub"
 
     - name: Terraform Destroy
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.terraform_action == 'destroy'
-      run: terraform destroy -auto-approve
+      # ADICIONAMOS OS -var AQUI EMBAIXO TAMBÉM
+      run: terraform destroy -auto-approve -var="private_key_path=oci_api_key.pem" -var="ssh_public_key_path=ssh_public_key.pub"
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -68,5 +68,3 @@ jobs:
         TF_VAR_fingerprint: ${{ secrets.TF_VAR_fingerprint }}
         TF_VAR_region: ${{ secrets.TF_VAR_region }}
         TF_VAR_compartment_ocid: ${{ secrets.TF_VAR_compartment_ocid }}
-        TF_VAR_private_key_path: "oci_api_key.pem"
-        TF_VAR_ssh_public_key_path: "ssh_public_key.pub"
