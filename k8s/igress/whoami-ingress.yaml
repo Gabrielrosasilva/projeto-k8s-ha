@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoami-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Pede o certificado automaticamente
+spec:
+  tls:
+  - hosts:
+    - meuprojetok8s.cloudns.net # COLOQUE O SEU DOMÍNIO AQUI
+    secretName: whoami-tls-secret # Onde o certificado vai ficar salvo
+  rules:
+  - host: meuprojetok8s.cloudns.net # COLOQUE O SEU DOMÍNIO AQUI
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whoami-service
+            port:
+              number: 80
