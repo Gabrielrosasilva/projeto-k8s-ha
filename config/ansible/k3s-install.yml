@@ -21,13 +21,23 @@
   become: yes 
   tasks:
     - name: Atualizar IP Público automaticamente no CloudNS
-      shell: "curl -s '{{ cloudns_url }}'"
-      when: cloudns_url is defined and cloudns_url != ''
+      uri:
+        url: "{{ lookup('env', 'CLOUDNS_URL') }}"
+        method: GET
+        return_content: yes
+      # Só executa se a variável de ambiente não estiver vazia
+      when: lookup('env', 'CLOUDNS_URL') != ''
+      ignore_errors: yes
 
     - name: Instalar K3s no Master (Sem Traefik)
       shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" sh -
       args:
         creates: /usr/local/bin/k3s
+      # O PULO DO GATO: Se der erro de Lock do Linux, tenta de novo!
+      register: result_master
+      until: result_master.rc == 0
+      retries: 5
+      delay: 15
 
     - name: Obter o token do cluster K3s
       slurp:
@@ -58,6 +68,11 @@
         curl -sfL https://get.k3s.io | K3S_URL=https://{{ hostvars[groups['master'][0]]['master_ip'] }}:6443 K3S_TOKEN={{ hostvars[groups['master'][0]]['token'] }} sh -
       args:
         creates: /usr/local/bin/k3s-agent
+      # Mesma proteção de Retry para os Workers
+      register: result_worker
+      until: result_worker.rc == 0
+      retries: 5
+      delay: 15
 
 # ==========================================================
 # 4. DEPLOY DA APLICAÇÃO E INGRESS (AUTOMATIZADO)
@@ -99,8 +114,8 @@
 
     - name: Enviar arquivos YAML do projeto para o Servidor Master
       copy:
-        src: ../../../k8s/ 
-        dest: /tmp/k8s/ 
+        src: ../../../k8s/
+        dest: /tmp/k8s/
 
     - name: Aplicar manifests (Whoami, Issuer, Ingress)
       shell: |
