@@ -88,7 +88,7 @@
       ignore_errors: yes
 
     - name: Instalar Helm CLI
-      shell: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      shell: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | PATH="/usr/local/bin:$PATH" bash
       args:
         creates: /usr/local/bin/helm
 
