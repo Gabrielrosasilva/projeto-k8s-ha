@@ -84,7 +84,7 @@
     - name: Aguardar o Master ficar pronto
       shell: |
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        kubectl wait --for=condition=Ready nodes --all --timeout=600s
+        /usr/local/bin/kubectl wait --for=condition=Ready nodes --all --timeout=600s
       ignore_errors: yes
 
     - name: Instalar Helm CLI
@@ -95,19 +95,20 @@
     - name: Adicionar repositórios do Nginx e Cert-Manager
       shell: |
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-        helm repo add jetstack https://charts.jetstack.io
-        helm repo update
+        # Usando o caminho absoluto do Helm para evitar erro de PATH no Ansible
+        /usr/local/bin/helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+        /usr/local/bin/helm repo add jetstack https://charts.jetstack.io
+        /usr/local/bin/helm repo update
 
     - name: Instalar Nginx Ingress via Helm
       shell: |
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
+        /usr/local/bin/helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.type=LoadBalancer
 
     - name: Instalar Cert-Manager via Helm
       shell: |
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+        /usr/local/bin/helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
 
     - name: Aguardar o Cert-Manager iniciar
       shell: sleep 30
@@ -120,6 +121,7 @@
     - name: Aplicar manifests (Whoami, Issuer, Ingress)
       shell: |
         export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-        kubectl apply -f /tmp/k8s/app/whoami.yaml
-        kubectl apply -f /tmp/k8s/igress/cluster-issuer.yaml
-        kubectl apply -f /tmp/k8s/igress/whoami-ingress.yaml
+        # Usando o caminho absoluto do Kubectl também
+        /usr/local/bin/kubectl apply -f /tmp/k8s/app/whoami.yaml
+        /usr/local/bin/kubectl apply -f /tmp/k8s/igress/cluster-issuer.yaml
+        /usr/local/bin/kubectl apply -f /tmp/k8s/igress/whoami-ingress.yaml
