@@ -5,14 +5,14 @@ metadata:
   namespace: default
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Pede o certificado automaticamente
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   tls:
   - hosts:
-    - meuprojetok8s.cloudns.net # COLOQUE O SEU DOMÍNIO AQUI
-    secretName: whoami-tls-secret # Onde o certificado vai ficar salvo
+    - meuprojetok8s.cloud-ip.cc
+    secretName: whoami-tls-secret
   rules:
-  - host: meuprojetok8s.cloudns.net # COLOQUE O SEU DOMÍNIO AQUI
+  - host: meuprojetok8s.cloud-ip.cc
     http:
       paths:
       - path: /
