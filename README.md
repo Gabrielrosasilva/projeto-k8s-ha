@@ -67,6 +67,7 @@ Provisionamento manual
 
 A estrutura foi desenhada para refletir responsabilidades claras (árvore de diretórios):
 
+```
 projeto-k8s-ha/
 ├── .github/
 │   └── workflows/
@@ -97,7 +98,7 @@ projeto-k8s-ha/
 ├── loki-ds.yaml                   # Correções de datasource da stack de logs
 ├── loki-fix.yaml                  # Configuração Helm customizada do Promtail
 └── .gitignore
-
+```
 ---
 
 ## 4. Backend de Estado (Terraform State)
