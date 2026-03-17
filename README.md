@@ -74,28 +74,28 @@ projeto-k8s-ha/
 ├── config/
 │   └── ansible/
 │       ├── get_helm.sh
-│       ├── inventory.ini	# Inventário dinâmico gerado pelo Terraform
-│       ├── k3s-install.yml # Playbook de bootstrap do cluster
-│       └── k3s.yaml		# Kubeconfig gerado
+│       ├── inventory.ini          # Inventário dinâmico gerado pelo Terraform
+│       ├── k3s-install.yml        # Playbook de bootstrap do cluster
+│       └── k3s.yaml               # Kubeconfig gerado
 ├── infra/
 │   └── terraform/
 │       ├── .terraform.lock.hcl
-│       ├── compute.tf		# Definição das VMs e geração do inventory.ini
-│       ├── network.tf		# VCN e Subnets
+│       ├── compute.tf             # Definição das VMs e geração do inventory.ini
+│       ├── network.tf             # VCN e Subnets
 │       ├── outputs.tf
 │       ├── provider.tf
-│       ├── security.tf		# Security Lists / Regras de firewall
+│       ├── security.tf            # Security Lists / regras de firewall
 │       ├── terraform.tfvars
 │       ├── variables.tf
 │       └── versions.tf
 ├── k8s/
 │   ├── app/
-│   │   └── whoami.yaml		# Deployment da aplicação de teste (HA)
-│   └── igress/
-│       ├── cluster-issuer.yaml  # Configuração do Let's Encrypt
-│       └── whoami-ingress.yaml	 # Configuração de rota DNS/TLS da aplicação
-├── loki-ds.yaml		# Correções de Datasource da stack de logs
-├── loki-fix.yaml 	 # Configuração Helm customizada do Promtail
+│   │   └── whoami.yaml            # Deployment da aplicação de teste
+│   └── ingress/
+│       ├── cluster-issuer.yaml    # Configuração do Let's Encrypt
+│       └── whoami-ingress.yaml    # Configuração de rota DNS/TLS da aplicação
+├── loki-ds.yaml                   # Correções de datasource da stack de logs
+├── loki-fix.yaml                  # Configuração Helm customizada do Promtail
 └── .gitignore
 
 ---
